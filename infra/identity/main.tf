@@ -29,7 +29,7 @@ resource "azurerm_role_assignment" "github_actions_key_vault_certificates_office
 
 resource "azurerm_role_assignment" "github_actions_key_vault_certificates_user" {
   scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
-  role_definition_name = "Key Vault Certificates User"
+  role_definition_name = "Key Vault Certificate User"
   principal_id         = azuread_service_principal.github_actions.object_id
 }
 

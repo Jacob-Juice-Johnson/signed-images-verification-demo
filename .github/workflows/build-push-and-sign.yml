@@ -5,13 +5,19 @@ on:
 
 env:
   REGISTRY: ratifyacrdemo009.azurecr.io  # Updated to match Terraform ACR name
-  IMAGE_NAME: demo-app
   CERT_NAME: ratify  # Updated to match Terraform certificate name
   AKV_NAME: ratifykvdemo009  # Updated to match Terraform Key Vault name
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image_type:
+          - name: demo-signed-image
+            sign: true
+          - name: demo-unsigned-image
+            sign: false
     
     steps:
     - name: Checkout repository
@@ -36,18 +42,20 @@ jobs:
         context: ./src
         file: ./src/Dockerfile
         push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:${{ github.sha }}
 
     - name: Retrieve digest
       run: |
-        echo "target_artifact_reference=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}" >> "$GITHUB_ENV"
+        echo "target_artifact_reference=${{ env.REGISTRY }}/${{ matrix.image_type.name }}@${{ steps.push.outputs.digest }}" >> "$GITHUB_ENV"
 
     # Install Notation CLI with the default version "1.1.0"
     - name: setup notation
+      if: matrix.image_type.sign
       uses: notaryproject/notation-action/setup@v1
     
     # Get Key ID dynamically from Azure Key Vault
     - name: Get Key ID from Azure Key Vault
+      if: matrix.image_type.sign
       run: |
         KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
         echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
@@ -55,6 +63,7 @@ jobs:
     
     # Sign your OCI artifact using private key stored in AKV
     - name: sign OCI artifact using key pair from AKV
+      if: matrix.image_type.sign
       uses: notaryproject/notation-action/sign@v1
       with:
         plugin_name: azure-kv
@@ -65,4 +74,4 @@ jobs:
         signature_format: cose
         plugin_config: |-
           self_signed=true
-        allow_referrers_api: 'true'
+        force_referrers_tag: 'true'
