@@ -27,6 +27,18 @@ resource "azurerm_role_assignment" "github_actions_key_vault_certificates_office
   principal_id         = azuread_service_principal.github_actions.object_id
 }
 
+resource "azurerm_role_assignment" "github_actions_key_vault_certificates_user" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Key Vault Certificates User"
+  principal_id         = azuread_service_principal.github_actions.object_id
+}
+
+resource "azurerm_role_assignment" "github_actions_key_vault_crypto_user" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Key Vault Crypto User"
+  principal_id         = azuread_service_principal.github_actions.object_id
+}
+
 # User role assignment (existing)
 resource "azurerm_role_assignment" "user_key_vault_admin" {
   scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
