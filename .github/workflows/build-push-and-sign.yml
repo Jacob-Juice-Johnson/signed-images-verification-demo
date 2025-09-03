@@ -42,7 +42,9 @@ jobs:
         context: ./src
         file: ./src/Dockerfile
         push: true
-        tags: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:${{ github.sha }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
 
     - name: Retrieve digest
       run: |

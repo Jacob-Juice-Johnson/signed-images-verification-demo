@@ -111,7 +111,7 @@ resource "azurerm_key_vault_certificate" "ratify-cert" {
         "digitalSignature",
       ]
 
-      subject            = "CN=demo.com"
+      subject            = "C=US, ST=IL, L=Chicago, O=demo.io, OU=Demo, CN=Demo"
       validity_in_months = 12
     }
   }
