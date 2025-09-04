@@ -11,35 +11,7 @@ variable "aks_cluster_name" {
 variable "policy_definition_name" {
   description = "Name for the policy definition"
   type        = string
-  default     = "ratify-default-custom-policy"
-}
-
-variable "policy_effect" {
-  description = "Effect of the policy"
-  type        = string
-  default     = "Deny"
-  validation {
-    condition     = contains(["Deny", "Audit", "Disabled"], var.policy_effect)
-    error_message = "Policy effect must be one of: Deny, Audit, Disabled."
-  }
-}
-
-variable "excluded_namespaces" {
-  description = "List of Kubernetes namespaces to exclude from policy evaluation"
-  type        = list(string)
-  default     = ["kube-system", "gatekeeper-system"]
-}
-
-variable "namespaces" {
-  description = "List of Kubernetes namespaces to include in policy evaluation. Empty list means all namespaces"
-  type        = list(string)
-  default     = []
-}
-
-variable "label_selector" {
-  description = "Kubernetes label selector for policy evaluation"
-  type        = any
-  default     = {}
+  default     = "ratify-image-signing-verification"
 }
 
 variable "identity_name" {

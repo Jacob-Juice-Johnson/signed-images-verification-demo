@@ -9,25 +9,54 @@ resource "azurerm_policy_definition" "ratify_custom_policy" {
   policy_rule = jsonencode(local.policy_definition.policyRule)
 }
 
-resource "azurerm_resource_policy_assignment" "ratify_policy_assignment" {
-  name                 = var.policy_definition_name
+# resource "azurerm_resource_policy_assignment" "ratify_policy_assignment_deny" {
+#   name                 = "${var.policy_definition_name}-deny"
+#   resource_id          = data.azurerm_kubernetes_cluster.aks.id
+#   policy_definition_id = azurerm_policy_definition.ratify_custom_policy.id
+#   display_name         = "Ratify Policy Assignment (Deny)"
+#   description          = "Assignment of Ratify custom policy to AKS cluster for deny effect"
+
+#   parameters = jsonencode({
+#     effect = {
+#       value = "Deny"
+#     }
+#     excludedNamespaces = {
+#       value = ["kube-system", "gatekeeper-system", "audit"]
+#     }
+#     namespaces = {
+#       value = []
+#     }
+#     labelSelector = {
+#       value = {}
+#     }
+#   })
+
+#   depends_on = [
+#     kubernetes_manifest.ratify_store_oras,
+#     kubernetes_manifest.ratify_kmp_akv,
+#     kubernetes_manifest.ratify_verifier_notation
+#   ]
+# }
+
+resource "azurerm_resource_policy_assignment" "ratify_policy_assignment_audit" {
+  name                 = "${var.policy_definition_name}-audit"
   resource_id          = data.azurerm_kubernetes_cluster.aks.id
   policy_definition_id = azurerm_policy_definition.ratify_custom_policy.id
-  display_name         = "Ratify Policy Assignment"
-  description          = "Assignment of Ratify custom policy to AKS cluster"
+  display_name         = "Ratify Policy Assignment (Audit)"
+  description          = "Assignment of Ratify custom policy to AKS cluster for audit namespace"
 
   parameters = jsonencode({
     effect = {
-      value = var.policy_effect
+      value = "Audit"
     }
     excludedNamespaces = {
-      value = var.excluded_namespaces
+      value = []
     }
     namespaces = {
-      value = var.namespaces
+      value = ["audit"]
     }
     labelSelector = {
-      value = var.label_selector
+      value = {}
     }
   })
 

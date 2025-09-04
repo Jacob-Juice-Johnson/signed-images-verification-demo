@@ -1,21 +1,6 @@
-output "policy_definition_id" {
-  description = "The ID of the created policy definition"
-  value       = azurerm_policy_definition.ratify_custom_policy.id
-}
-
-output "policy_assignment_id" {
-  description = "The ID of the policy assignment"
-  value       = azurerm_resource_policy_assignment.ratify_policy_assignment.id
-}
-
 output "aks_cluster_id" {
   description = "The ID of the AKS cluster"
   value       = data.azurerm_kubernetes_cluster.aks.id
-}
-
-output "policy_definition_name" {
-  description = "The name of the policy definition"
-  value       = azurerm_policy_definition.ratify_custom_policy.name
 }
 
 output "ratify_store_name" {

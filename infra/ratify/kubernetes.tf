@@ -1,9 +1,21 @@
+resource "kubernetes_namespace" "audit" {
+  metadata {
+    name = "audit"
+    labels = {
+      "ratify-demo" = "audit-namespace"
+    }
+  }
+}
+
 resource "kubernetes_manifest" "ratify_store_oras" {
   manifest = {
     apiVersion = "config.ratify.deislabs.io/v1beta1"
     kind       = "Store"
     metadata = {
       name      = "store-oras"
+      labels = {
+        "ratify-demo" = "store-oras"
+      }
     }
     spec = {
       name = "oras"
@@ -24,6 +36,9 @@ resource "kubernetes_manifest" "ratify_kmp_akv" {
     kind       = "KeyManagementProvider"
     metadata = {
       name      = "keymanagementprovider-akv"
+      labels = {
+        "ratify-demo" = "keymanagementprovider-akv"
+      }
     }
     spec = {
       type = "azurekeyvault"
@@ -48,6 +63,9 @@ resource "kubernetes_manifest" "ratify_verifier_notation" {
     kind       = "Verifier"
     metadata = {
       name      = "verifier-notation"
+      labels = {
+        "ratify-demo" = "verifier-notation"
+      }
     }
     spec = {
       name          = "notation"
