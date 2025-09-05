@@ -44,3 +44,11 @@ terraform apply -auto-approve
 
 6. Run build and deploy github action
 (Builds, pushes, and signs demo-signed-image and build and pushes demo-unsigned-image)
+
+7. Test deploying images
+(Deploy signed image should work, deploy unsigned image should be denied)
+```
+sudo az acr login --name {acr-name}
+kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest
+kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest
+```

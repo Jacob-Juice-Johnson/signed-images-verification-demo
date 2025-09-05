@@ -1,12 +1,3 @@
-resource "kubernetes_namespace" "audit" {
-  metadata {
-    name = "audit"
-    labels = {
-      "ratify-demo" = "audit-namespace"
-    }
-  }
-}
-
 resource "kubernetes_manifest" "ratify_store_oras" {
   manifest = {
     apiVersion = "config.ratify.deislabs.io/v1beta1"
