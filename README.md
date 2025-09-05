@@ -47,8 +47,15 @@ terraform apply -auto-approve
 
 7. Test deploying images
 (Deploy signed image should work, deploy unsigned image should be denied)
+
+Verify the gatekeeper resource was deployed (Gatekeeper polls azure policy every 15 minutes)
+```
+kubectl get constraintTemplate ratifyverification
+```
+
 ```
 sudo az acr login --name {acr-name}
-kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest
-kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest
+kubectl create namespace test
+kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest --namespace test
+kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest --namespace test
 ```
