@@ -78,8 +78,16 @@ jobs:
           self_signed=true
         force_referrers_tag: 'true'
 
-  build-and-push-helm-chart:
+  build-and-push-helm-charts:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        chart_type:
+          - name: demo-app-signed
+            sign: true
+          - name: demo-app-unsigned
+            sign: false
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -107,20 +115,22 @@ jobs:
 
     - name: Push Helm Chart to ACR OCI Registry
       run: |
-        helm push ./charts/demo-app-1.0.0.tgz oci://${{ env.REGISTRY }}/helm
-        DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name helm/demo-app --query "[?tags[0]=='1.0.0'].digest" -o tsv)
+        helm push ./charts/demo-app-1.0.0.tgz oci://${{ env.REGISTRY }}/helm/${{ matrix.chart_type.name }}
+        DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name helm/${{ matrix.chart_type.name }}/demo-app --query "[?tags[0]=='1.0.0'].digest" -o tsv)
         echo "HELM_DIGEST=$DIGEST" >> "$GITHUB_ENV"
 
     - name: Retrieve digest
       run: |
-        echo "target_artifact_reference=${{ env.REGISTRY }}/helm/demo-app@${{ env.HELM_DIGEST }}" >> "$GITHUB_ENV"
+        echo "target_artifact_reference=${{ env.REGISTRY }}/helm/${{ matrix.chart_type.name }}/demo-app@${{ env.HELM_DIGEST }}" >> "$GITHUB_ENV"
 
     # Install Notation CLI with the default version "1.1.0"
     - name: setup notation
+      if: matrix.chart_type.sign
       uses: notaryproject/notation-action/setup@v1
     
     # Get Key ID dynamically from Azure Key Vault
     - name: Get Key ID from Azure Key Vault
+      if: matrix.chart_type.sign
       run: |
         KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
         echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
@@ -128,6 +138,7 @@ jobs:
     
     # Sign your OCI artifact using private key stored in AKV
     - name: sign OCI artifact using key pair from AKV
+      if: matrix.chart_type.sign
       uses: notaryproject/notation-action/sign@v1
       with:
         plugin_name: azure-kv
@@ -141,19 +152,28 @@ jobs:
         force_referrers_tag: 'true'
 
   deploy-app:
+    name: Deploy Application ${{ matrix.app_type.name }} to AKS
     runs-on: ubuntu-latest
     environment: approve-me
     needs: 
       - build-and-push-docker-images
-      - build-and-push-helm-chart
+      - build-and-push-helm-charts
     strategy:
       fail-fast: false
       matrix:
-        image_type:
-          - name: demo-signed-image
+        app_type:
+          - name: demo-all-signed
             image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
-          - name: demo-unsigned-image
+            helm_chart: "demo-app-signed"
+          - name: demo-helm-unsigned
+            image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
+            helm_chart: "demo-app-unsigned"
+          - name: demo-docker-unsigned
             image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
+            helm_chart: "demo-app-signed"
+          - name: demo-all-unsigned
+            image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
+            helm_chart: "demo-app-unsigned"
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -172,6 +192,34 @@ jobs:
       run: |
         az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
 
+    # Install Notation CLI with the default version "1.1.0"
+    - name: setup notation
+      uses: notaryproject/notation-action/setup@v1
+    
+    # Get Key ID dynamically from Azure Key Vault
+    - name: Get Key ID from Azure Key Vault
+      run: |
+        KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
+        echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+        echo "Retrieved Key ID: $KEY_ID"
+
+    # Configure notation with the self-signed certificate
+    # Verify the signed Helm chart in ACR
+    - name: Notation Verify Helm Charts
+      run: |
+        # Download the certificate from Key Vault
+        az keyvault certificate download --vault-name ${{ env.AKV_NAME }} --name ${{ env.CERT_NAME }} --file cert.crt --encoding PEM
+        # Add the certificate to notation trust store
+        notation cert add --type ca --store ca:${{ env.CERT_NAME }} cert.crt
+        # Verify the certificate was added
+        notation cert list --store ca
+        # Import the trust policy
+        notation policy import --file ./trustpolicy/demo-trustpolicy.json
+        # Show trust policy
+        notation policy show
+        # Verify the Helm chart in ACR (only for signed charts)
+        notation verify ${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app@${{ env.HELM_DIGEST }}
+
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
 
@@ -181,9 +229,9 @@ jobs:
 
     - name: Deploy application with Helm
       run: |
-        helm upgrade --install ${{ matrix.image_type.name }} oci://${{ env.REGISTRY }}/helm/demo-app \
+        helm upgrade --install ${{ matrix.app_type.name }} oci://${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app \
           --version 1.0.0 \
-          --set image.name=${{ matrix.image_type.image_name }} \
+          --set image.name=${{ matrix.app_type.image_name }} \
           --namespace demo \
           --create-namespace
     
