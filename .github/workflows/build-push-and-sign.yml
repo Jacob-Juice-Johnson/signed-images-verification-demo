@@ -97,10 +97,6 @@ jobs:
       run: |
         az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
 
-    - name: Install jq
-      run: |
-        sudo apt-get update && sudo apt-get install -y jq
-
     - name: Package Helm Chart
       run: |
         mkdir -p ./charts
@@ -113,7 +109,8 @@ jobs:
 
     - name: Push Helm Chart to ACR OCI Registry
       run: |
-        DIGEST=$(helm push ./charts/demo-app-${{ env.CHART_VERSION }}.tgz oci://${{ env.REGISTRY }}/helm --output json | jq -r '.digest')
+        helm push ./charts/demo-app-${{ env.CHART_VERSION }}.tgz oci://${{ env.REGISTRY }}/helm
+        DIGEST=$(az acr repository show-manifests --name $(echo $REGISTRY | cut -d'.' -f1) --repository helm/demo-app --query "[?tags[0]=='${{ env.CHART_VERSION }}'].digest" -o tsv)
         echo "HELM_DIGEST=$DIGEST" >> "$GITHUB_ENV"
 
     - name: Retrieve digest
