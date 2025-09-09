@@ -208,9 +208,9 @@ jobs:
     - name: Notation Verify Helm Charts
       run: |
         # Download the certificate from Key Vault
-        az keyvault certificate download --vault-name ${{ env.AKV_NAME }} --name ${{ env.CERT_NAME }} --file cert.crt --encoding PEM
-        # Add the certificate to notation trust store using a compliant store name
-        notation cert add --type ca --store ca:ca-certs cert.crt
+        az keyvault certificate download --vault-name ${{ env.AKV_NAME }} --name ${{ env.CERT_NAME }} --file cert.pem --encoding PEM
+        # Add the certificate to notation trust store using correct format
+        notation cert add --type ca --store ca-certs cert.pem
         # Verify the certificate was added
         notation cert list --store ca
         # Import the trust policy
