@@ -55,7 +55,7 @@ kubectl get constraintTemplate ratifyverification
 
 ```
 sudo az acr login --name {acr-name}
-kubectl create namespace test
-kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest --namespace test
-kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest --namespace test
+kubectl create namespace demo
+kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest --namespace demo
+kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest --namespace demo
 ```

@@ -217,8 +217,11 @@ jobs:
         notation policy import ./trustpolicy/demo-trustpolicy.json
         # Show trust policy
         notation policy show
-        # Verify the Helm chart in ACR using tag instead of digest
-        notation verify ${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app:1.0.0
+        # Get the digest of the specific helm chart we want to verify
+        CHART_DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name helm/${{ matrix.app_type.helm_chart }}/demo-app --query "[?tags[0]=='1.0.0'].digest" -o tsv)
+        echo "Chart digest: $CHART_DIGEST"
+        # Verify the Helm chart in ACR using digest for security
+        notation verify ${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app@$CHART_DIGEST
 
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
@@ -234,4 +237,7 @@ jobs:
           --set image.name=${{ matrix.app_type.image_name }} \
           --namespace demo \
           --create-namespace
-    
+
+    - name: Test Helm Chart Post Deployment
+      run: |
+        helm test ${{ matrix.app_type.name }} -n demo
