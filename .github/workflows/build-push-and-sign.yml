@@ -12,6 +12,7 @@ jobs:
   build-and-push-docker-images:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         image_type:
           - name: demo-signed-image
@@ -146,6 +147,7 @@ jobs:
       - build-and-push-docker-images
       - build-and-push-helm-chart
     strategy:
+      fail-fast: false
       matrix:
         image_type:
           - name: demo-signed-image
