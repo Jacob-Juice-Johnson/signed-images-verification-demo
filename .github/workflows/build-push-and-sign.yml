@@ -97,6 +97,10 @@ jobs:
       run: |
         az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
 
+    - name: Install jq
+      run: |
+        sudo apt-get update && sudo apt-get install -y jq
+
     - name: Package Helm Chart
       run: |
         mkdir -p ./charts
