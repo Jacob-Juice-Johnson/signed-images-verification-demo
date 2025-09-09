@@ -152,7 +152,7 @@ jobs:
         force_referrers_tag: 'true'
 
   deploy-app:
-    name: Deploy Application ${{ matrix.app_type.name }} to AKS
+    name: ${{ matrix.app_type.name }} Deploy Application to AKS
     runs-on: ubuntu-latest
     environment: approve-me
     needs: 
