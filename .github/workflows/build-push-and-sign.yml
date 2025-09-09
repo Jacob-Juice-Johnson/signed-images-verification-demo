@@ -214,7 +214,7 @@ jobs:
         # Verify the certificate was added
         notation cert list --store ca
         # Import the trust policy
-        notation policy import --file ./trustpolicy/demo-trustpolicy.json
+        notation policy import ./trustpolicy/demo-trustpolicy.json
         # Show trust policy
         notation policy show
         # Verify the Helm chart in ACR (only for signed charts)
