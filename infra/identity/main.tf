@@ -39,9 +39,14 @@ resource "azurerm_role_assignment" "github_actions_key_vault_crypto_user" {
   principal_id         = azuread_service_principal.github_actions.object_id
 }
 
-# User role assignment (existing)
 resource "azurerm_role_assignment" "user_key_vault_admin" {
   scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
   role_definition_name = "Key Vault Administrator"
   principal_id         = data.azuread_client_config.current.object_id
+}
+
+resource "azurerm_role_assignment" "github_actions_aks_contributor" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Azure Kubernetes Service Contributor Role"
+  principal_id         = azuread_service_principal.github_actions.object_id
 }
