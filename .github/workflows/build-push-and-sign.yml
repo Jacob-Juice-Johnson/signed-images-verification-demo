@@ -168,6 +168,10 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Log in to Azure Container Registry
+      run: |
+        az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
+
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
 
