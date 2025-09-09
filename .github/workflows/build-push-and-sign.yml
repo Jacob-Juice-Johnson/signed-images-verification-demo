@@ -110,7 +110,7 @@ jobs:
     - name: Push Helm Chart to ACR OCI Registry
       run: |
         helm push ./charts/demo-app-${{ env.CHART_VERSION }}.tgz oci://${{ env.REGISTRY }}/helm
-        DIGEST=$(az acr repository show-manifests --name $(echo $REGISTRY | cut -d'.' -f1) --repository helm/demo-app --query "[?tags[0]=='${{ env.CHART_VERSION }}'].digest" -o tsv)
+        DIGEST=$(az acr manifest list-metadata --name $(echo $REGISTRY | cut -d'.' -f1) --repository helm/demo-app --query "[?tags[0]=='${{ env.CHART_VERSION }}'].digest" -o tsv)
         echo "HELM_DIGEST=$DIGEST" >> "$GITHUB_ENV"
 
     - name: Retrieve digest
