@@ -100,17 +100,14 @@ jobs:
     - name: Package Helm Chart
       run: |
         mkdir -p ./charts
-        VERSION="1.0.0_${{ github.sha }}"
-        echo "CHART_VERSION=$VERSION" >> "$GITHUB_ENV"
         helm package src/helm \
-          --version "$VERSION" \
           --app-version ${{ github.sha }} \
           --destination ./charts
 
     - name: Push Helm Chart to ACR OCI Registry
       run: |
-        helm push ./charts/demo-app-${{ env.CHART_VERSION }}.tgz oci://${{ env.REGISTRY }}/helm
-        DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name helm/demo-app --query "[?tags[0]=='${{ env.CHART_VERSION }}'].digest" -o tsv)
+        helm push ./charts/demo-app-1.0.0.tgz oci://${{ env.REGISTRY }}/helm
+        DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name helm/demo-app --query "[?tags[0]=='1.0.0'].digest" -o tsv)
         echo "HELM_DIGEST=$DIGEST" >> "$GITHUB_ENV"
 
     - name: Retrieve digest
