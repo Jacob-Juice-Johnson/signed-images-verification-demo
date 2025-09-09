@@ -217,8 +217,8 @@ jobs:
         notation policy import ./trustpolicy/demo-trustpolicy.json
         # Show trust policy
         notation policy show
-        # Verify the Helm chart in ACR (only for signed charts)
-        notation verify ${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app@${{ env.HELM_DIGEST }}
+        # Verify the Helm chart in ACR using tag instead of digest
+        notation verify ${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app:1.0.0
 
     - name: Setup kubectl
       uses: azure/setup-kubectl@v4
