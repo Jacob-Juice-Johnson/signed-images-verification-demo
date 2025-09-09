@@ -100,8 +100,9 @@ jobs:
     - name: Package Helm Chart
       run: |
         mkdir -p ./charts
+        VERSION="1.0.0+${{ github.sha }}"
         helm package src/helm \
-          --version ${{ github.sha }} \
+          --version "$VERSION" \
           --app-version ${{ github.sha }} \
           --destination ./charts
 
