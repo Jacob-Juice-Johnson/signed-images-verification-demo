@@ -173,7 +173,7 @@ jobs:
 
     - name: Get AKS credentials
       run: |
-        az aks get-credentials --resource-group rg-ratify-demo-009 --name ratify-aks-cluster-009
+        az aks get-credentials --resource-group ratifyrgdemo009 --name ratifyaksdemo009
 
     - name: Deploy application with Helm
       run: |
