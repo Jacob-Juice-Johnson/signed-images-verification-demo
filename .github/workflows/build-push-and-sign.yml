@@ -228,12 +228,12 @@ jobs:
             helm_chart: "demo-app-unsigned"
             test_image: "busybox:latest"
             # 2 will fail on test, helm will deploy but image will pod will not be there (fails on helm deploy)
-          - name: all-signed-2
+          - name: helm-signed-2
             image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
             helm_chart: "demo-app-signed"
             test_image: "busybox:latest"
             # 3 will fail on test
-          - name: all-signed-3
+          - name: app-image-signed-3
             image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
             helm_chart: "demo-app-signed"
             test_image: "busybox:latest"
