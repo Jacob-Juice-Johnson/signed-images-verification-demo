@@ -9,6 +9,65 @@ env:
   AKV_NAME: ratifykvdemo009  # Updated to match Terraform Key Vault name
 
 jobs:
+  pull-push-sign-busybox:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Azure CLI
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Log in to Azure Container Registry
+      run: |
+        az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
+
+    - name: Pull, tag, and push busybox image
+      run: |
+        # Pull the official busybox image
+        docker pull busybox:latest
+        
+        # Tag it for our ACR
+        docker tag busybox:latest ${{ env.REGISTRY }}/busybox:latest
+        docker tag busybox:latest ${{ env.REGISTRY }}/busybox:${{ github.sha }}
+        
+        # Push to ACR
+        docker push ${{ env.REGISTRY }}/busybox:latest
+        DIGEST=$(docker push ${{ env.REGISTRY }}/busybox:${{ github.sha }} | grep 'sha256:' | awk '{print $3}')
+        
+        # Set target artifact reference for signing
+        echo "target_artifact_reference=${{ env.REGISTRY }}/busybox@$DIGEST" >> "$GITHUB_ENV"
+
+    # Install Notation CLI with the default version "1.1.0"
+    - name: setup notation
+      uses: notaryproject/notation-action/setup@v1
+    
+    # Get Key ID dynamically from Azure Key Vault
+    - name: Get Key ID from Azure Key Vault
+      run: |
+        KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
+        echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+        echo "Retrieved Key ID: $KEY_ID"
+    
+    # Sign the busybox image using private key stored in AKV
+    - name: sign busybox image using key pair from AKV
+      uses: notaryproject/notation-action/sign@v1
+      with:
+        plugin_name: azure-kv
+        plugin_url: https://github.com/Azure/notation-azure-kv/releases/download/v1.0.1/notation-azure-kv_1.0.1_linux_amd64.tar.gz
+        plugin_checksum: f8a75d9234db90069d9eb5660e5374820edf36d710bd063f4ef81e7063d3810b
+        key_id: ${{ env.KEY_ID }}
+        target_artifact_reference: ${{ env.target_artifact_reference }}
+        signature_format: cose
+        plugin_config: |-
+          self_signed=true
+        force_referrers_tag: 'true'
+
   build-and-push-docker-images:
     runs-on: ubuntu-latest
     strategy:
@@ -156,24 +215,33 @@ jobs:
     runs-on: ubuntu-latest
     environment: approve-me
     needs: 
+      - pull-push-sign-busybox
       - build-and-push-docker-images
       - build-and-push-helm-charts
     strategy:
       fail-fast: false
       matrix:
         app_type:
-          - name: demo-all-signed
-            image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
-            helm_chart: "demo-app-signed"
-          - name: demo-helm-unsigned
-            image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
-            helm_chart: "demo-app-unsigned"
-          - name: demo-docker-unsigned
-            image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
-            helm_chart: "demo-app-signed"
-          - name: demo-all-unsigned
+            # 1 will fail on helm verify
+          - name: 1-all-unsigned
             image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
             helm_chart: "demo-app-unsigned"
+            test_image: "busybox:latest"
+            # 2 will fail on test, helm will deploy but image will pod will not be there (fails on helm deploy)
+          - name: 2-helm-signed
+            image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
+            helm_chart: "demo-app-signed"
+            test_image: "busybox:latest"
+            # 3 will fail on test
+          - name: 3-app-image-signed
+            image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
+            helm_chart: "demo-app-signed"
+            test_image: "busybox:latest"
+            # 4 will succeed
+          - name: 4-all-signed
+            image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
+            helm_chart: "demo-app-signed"
+            test_image: "ratifyacrdemo009.azurecr.io/busybox:latest"
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -235,6 +303,7 @@ jobs:
         helm upgrade --install ${{ matrix.app_type.name }} oci://${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app \
           --version 1.0.0 \
           --set image.name=${{ matrix.app_type.image_name }} \
+          --set testImage=${{ matrix.app_type.test_image }} \
           --namespace demo \
           --create-namespace
 

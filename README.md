@@ -59,3 +59,59 @@ kubectl create namespace demo
 kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest --namespace demo
 kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest --namespace demo
 ```
+
+8. Advanced testing
+(Run the github actions worklow and approve the deployment step)
+
+I have the github actions to do the following with matrixes. There are 3 artifacts that are in our ACR that we use during deployment. We have 4 scenarios that we test. The comments indicate which ones will fail and why.
+
+```
+matrix:
+    app_type:
+        # 1 will fail on helm verify
+        - name: 1-all-unsigned
+        image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
+        helm_chart: "demo-app-unsigned"
+        test_image: "busybox:latest"
+        # 2 will fail on test, helm will deploy but image will pod will not be there (fails on helm deploy)
+        - name: 2-helm-signed
+        image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
+        helm_chart: "demo-app-signed"
+        test_image: "busybox:latest"
+        # 3 will fail on test
+        - name: 3-app-image-signed
+        image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
+        helm_chart: "demo-app-signed"
+        test_image: "busybox:latest"
+        # 4 will succeed
+        - name: 4-all-signed
+        image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
+        helm_chart: "demo-app-signed"
+        test_image: "ratifyacrdemo009.azurecr.io/busybox:latest"
+```
+
+View the logs of deployments
+```
+# View all events in namespace
+kubectl get events --sort-by='.metadata.creationTimestamp' -n demo
+
+# For Helm-specific info
+helm status 3-app-image-signed -n demo
+helm get all 3-app-image-signed -n demo
+
+
+helm test 4-all-signed --logs -n demo
+```
+
+9. Cleanup
+(Cleanup to not incur costs)
+```
+cd infra/ratify
+terraform destroy -auto-approve
+
+cd ../platform
+terraform destroy -auto-approve
+
+cd ../identity
+terraform destroy -auto-approve
+```
