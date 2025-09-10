@@ -223,22 +223,22 @@ jobs:
       matrix:
         app_type:
             # 1 will fail on helm verify
-          - name: 1-all-unsigned
+          - name: all-unsigned-1
             image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
             helm_chart: "demo-app-unsigned"
             test_image: "busybox:latest"
             # 2 will fail on test, helm will deploy but image will pod will not be there (fails on helm deploy)
-          - name: 2-helm-signed
+          - name: all-signed-2
             image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
             helm_chart: "demo-app-signed"
             test_image: "busybox:latest"
             # 3 will fail on test
-          - name: 3-app-image-signed
+          - name: all-signed-3
             image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
             helm_chart: "demo-app-signed"
             test_image: "busybox:latest"
             # 4 will succeed
-          - name: 4-all-signed
+          - name: all-signed-4
             image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
             helm_chart: "demo-app-signed"
             test_image: "ratifyacrdemo009.azurecr.io/busybox:latest"
