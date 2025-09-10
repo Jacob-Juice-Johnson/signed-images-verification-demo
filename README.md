@@ -92,15 +92,23 @@ matrix:
 
 View the logs of deployments
 ```
-# View all events in namespace
-kubectl get events --sort-by='.metadata.creationTimestamp' -n demo
+# 1
+# View GitHub Actions log to verify helm chart was not signed causing this failure
 
-# For Helm-specific info
-helm status 3-app-image-signed -n demo
-helm get all 3-app-image-signed -n demo
+# 2
+# View all events in namespace to confirm helm-signed-2 failed due to image not signed
+kubectl get events --sort-by='.metadata.creationTimestamp' -n demo | grep helm-signed-2
 
+# 3 
+# Verify app-image-signed-3 pod is up and running
+# View GitHub Actions log to verify test failed due to image not signed
+kubectl get pods -n demo | grep app-image-signed-3
+helm test app-image-signed-3 --logs -n demo # Further verify test never ran
 
-helm test 4-all-signed --logs -n demo
+# 4
+# See pod is up and test pod ran and completed successfully
+kubectl get pods -n demo | grep all-signed-4
+helm test all-signed-4 --logs -n demo
 ```
 
 9. Cleanup
