@@ -25,7 +25,7 @@ The signing architecture is responsible for building, pushing, and signing conta
 
 The deployment verification architecture is responsible for verifying that images being deployed to an AKS cluster are signed. The architecture looks like this:
 
-![Deployment Verification Architecture Diagram](docs/deployment-diagram.png)
+![Deployment Verification Architecture Diagram](docs/verification-architecture.svg)
 
 ## Prerequisites
 
