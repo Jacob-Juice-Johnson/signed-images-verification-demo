@@ -1,125 +1,171 @@
-# signed-images-verification-demo
+# Signed Images Verification Demo
 
-## How to use demo
-1. Deploy Azure SPN for build-push-and-sign workflow
-(SPN, User Permissions)
-```
+A demonstration of container image signing and verification workflows using Azure Container Registry, Azure Kubernetes Service, and Ratify.
+
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Prerequisites](#prerequisites)
+- [Setup Instructions](#setup-instructions)
+- [Testing](#testing)
+- [Advanced Testing](#advanced-testing)
+- [Cleanup](#cleanup)
+
+## Architecture Overview
+
+This demo consists of two main components: the build and push workflow, and the deployment verification workflow.
+
+### Signing Architecture
+
+The signing architecture is responsible for building, pushing, and signing container images to Azure Container Registry. The architecture looks like this:
+
+![Signing Architecture Diagram](docs/build-diagram.png)
+
+### Deployment Verification Architecture
+
+The deployment verification architecture is responsible for verifying that images being deployed to an AKS cluster are signed. The architecture looks like this:
+
+![Deployment Verification Architecture Diagram](docs/deployment-diagram.png)
+
+## Prerequisites
+
+- Azure CLI installed and configured
+- Terraform installed
+- kubectl installed
+- Docker installed
+- Access to an Azure subscription
+- GitHub repository with Actions enabled
+
+## Setup Instructions
+
+### Step 1: Deploy Azure Service Principal
+
+Deploy the Azure Service Principal for the build-push-and-sign workflow:
+
+```bash
 cd infra/identity
 terraform init
 terraform apply -auto-approve
 ```
 
-2. Deploy Platform Infrastructure
-(RG, KV, Self Signed Cert, AKS, ACR, Managed Identity, and Ratify Helm Chart)
-```
+### Step 2: Deploy Platform Infrastructure
+
+Deploy the platform infrastructure including Resource Group, Key Vault, Self-Signed Certificate, AKS, ACR, Managed Identity, and Ratify Helm Chart:
+
+```bash
 cd infra/platform
 terraform init
 terraform apply -auto-approve
 ```
 
-3. Delete auto created ratify resources in AKS
-```
+### Step 3: Clean Up Auto-Created Ratify Resources
+
+Remove the automatically created Ratify resources in AKS:
+
+```bash
+# Get AKS credentials
 az aks get-credentials --resource-group {RG-name} --name {AKS-name} --overwrite-existing
+
+# Delete auto-created resources
 kubectl delete Verifier verifier-notation
 kubectl delete Store store-oras
 ```
 
-4. Deploy Ratify Policies
-(Ratify verifier, Ratify Store Oras, Ratify Key Management Provider, Audit NS, Azure Ratify Policy Definition, Azure Ratify Policy Assignment Deny, Azure Ratify Policy Assignment Audit)
-```
+### Step 4: Deploy Ratify Policies
+
+Deploy Ratify policies including verifier, store, key management provider, and Azure policies:
+
+```bash
 cd infra/ratify
 terraform init
 terraform apply -auto-approve
 ```
 
-5. Set up your Azure credentials as a GitHub secret named `AZURE_CREDENTIALS` in your repo
-```
+### Step 5: Configure GitHub Secrets
+
+Set up your Azure credentials as a GitHub secret named `AZURE_CREDENTIALS` in your repository:
+
+```json
 {
-    "clientSecret":  "look into local state file (not secure but good for demo lol)",
-    "subscriptionId":  "abaecb33-47b5-451a-abce-59549340ac7b",
-    "tenantId":  "1208b425-3044-488d-b6b5-7568e48f624e",
-    "clientId":  "e4a623bc-6818-471c-bbad-cc62dca20a12"
+    "clientSecret": "look into local state file (not secure but good for demo lol)",
+    "subscriptionId": "abaecb33-47b5-451a-abce-59549340ac7b",
+    "tenantId": "1208b425-3044-488d-b6b5-7568e48f624e",
+    "clientId": "e4a623bc-6818-471c-bbad-cc62dca20a12"
 }
 ```
 
-6. Run build and deploy github action
-(Builds, pushes, and signs demo-signed-image and build and pushes demo-unsigned-image)
+### Step 6: Run Build and Deploy GitHub Action
 
-7. Test deploying images
-(Deploy signed image should work, deploy unsigned image should be denied)
+Execute the GitHub Action workflow to build, push, and sign the demo images:
+- `demo-signed-image` (signed)
+- `demo-unsigned-image` (unsigned)
 
-Verify the gatekeeper resource was deployed (Gatekeeper polls azure policy every 15 minutes)
-```
-kubectl get constraintTemplate ratifyverification
-```
+## Testing
 
-```
-sudo az acr login --name {acr-name}
-kubectl create namespace demo
-kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest --namespace demo
-kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest --namespace demo
-```
+### Basic Image Deployment Test
 
-8. Advanced testing
-(Run the github actions worklow and approve the deployment step)
+1. **Verify Gatekeeper resource deployment** (Gatekeeper polls Azure Policy every 15 minutes):
+   ```bash
+   kubectl get constraintTemplate ratifyverification
+   ```
 
-I have the github actions to do the following with matrixes. There are 3 artifacts that are in our ACR that we use during deployment. We have 4 scenarios that we test. The comments indicate which ones will fail and why.
+2. **Test signed and unsigned image deployment**:
+   ```bash
+   # Login to ACR
+   sudo az acr login --name {acr-name}
+   
+   # Create demo namespace
+   kubectl create namespace demo
+   
+   # Deploy signed image (should succeed)
+   kubectl run demo-signed --image=ratifyacrdemo009.azurecr.io/demo-signed-image:latest --namespace demo
+   
+   # Deploy unsigned image (should be denied)
+   kubectl run demo-unsigned --image=ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest --namespace demo
+   ```
 
-```
-matrix:
-    app_type:
-        # 1 will fail on helm verify
-        - name: 1-all-unsigned
-        image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
-        helm_chart: "demo-app-unsigned"
-        test_image: "busybox:latest"
-        # 2 will fail on test, helm will deploy but image will pod will not be there (fails on helm deploy)
-        - name: 2-helm-signed
-        image_name: "ratifyacrdemo009.azurecr.io/demo-unsigned-image:latest"
-        helm_chart: "demo-app-signed"
-        test_image: "busybox:latest"
-        # 3 will fail on test
-        - name: 3-app-image-signed
-        image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
-        helm_chart: "demo-app-signed"
-        test_image: "busybox:latest"
-        # 4 will succeed
-        - name: 4-all-signed
-        image_name: "ratifyacrdemo009.azurecr.io/demo-signed-image:latest"
-        helm_chart: "demo-app-signed"
-        test_image: "ratifyacrdemo009.azurecr.io/busybox:latest"
-```
+## Advanced Testing
 
-View the logs of deployments
-```
-# 1
-# View GitHub Actions log to verify helm chart was not signed causing this failure
+The GitHub Actions workflow includes a matrix strategy with four test scenarios:
 
-# 2
-# View all events in namespace to confirm helm-signed-2 failed due to image not signed
+| Scenario | Name | Image | Helm Chart | Test Image | Expected Result |
+|----------|------|-------|------------|------------|-----------------|
+| 1 | `1-all-unsigned` | demo-unsigned-image | demo-app-unsigned | busybox:latest | ❌ Fails on Helm verify |
+| 2 | `2-helm-signed` | demo-unsigned-image | demo-app-signed | busybox:latest | ❌ Fails on Helm deploy |
+| 3 | `3-app-image-signed` | demo-signed-image | demo-app-signed | busybox:latest | ❌ Fails on test |
+| 4 | `4-all-signed` | demo-signed-image | demo-app-signed | demo busybox:latest | ✅ Succeeds |
+
+### Viewing Test Results
+
+```bash
+# Scenario 1: Check GitHub Actions log for Helm chart signature verification failure
+
+# Scenario 2: View events to confirm failure due to unsigned image
 kubectl get events --sort-by='.metadata.creationTimestamp' -n demo | grep helm-signed-2
 
-# 3 
-# Verify app-image-signed-3 pod is up and running
-# View GitHub Actions log to verify test failed due to image not signed
+# Scenario 3: Verify pod is running but test failed
 kubectl get pods -n demo | grep app-image-signed-3
-helm test app-image-signed-3 --logs -n demo # Further verify test never ran
+helm test app-image-signed-3 --logs -n demo
 
-# 4
-# See pod is up and test pod ran and completed successfully
+# Scenario 4: Verify successful deployment and test
 kubectl get pods -n demo | grep all-signed-4
 helm test all-signed-4 --logs -n demo
 ```
 
-9. Cleanup
-(Cleanup to not incur costs)
-```
+## Cleanup
+
+To avoid incurring costs, clean up the resources in reverse order:
+
+```bash
+# Clean up Ratify policies
 cd infra/ratify
 terraform destroy -auto-approve
 
+# Clean up platform infrastructure
 cd ../platform
 terraform destroy -auto-approve
 
+# Clean up identity resources
 cd ../identity
 terraform destroy -auto-approve
 ```
