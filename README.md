@@ -19,7 +19,7 @@ This demo consists of two main components: the build and push workflow, and the 
 
 The signing architecture is responsible for building, pushing, and signing container images to Azure Container Registry. The architecture looks like this:
 
-![Signing Architecture Diagram](docs/build-diagram.png)
+![Signing Architecture Diagram](docs/signing-architecture.svg)
 
 ### Deployment Verification Architecture
 
@@ -38,7 +38,13 @@ The deployment verification architecture is responsible for verifying that image
 
 ## Setup Instructions
 
-### Step 1: Deploy Azure Service Principal
+### Step 1: Login to Azure CLI
+
+```bash
+az login
+```
+
+### Step 2: Deploy Azure Service Principal
 
 Deploy the Azure Service Principal for the build-push-and-sign workflow:
 
@@ -48,7 +54,7 @@ terraform init
 terraform apply -auto-approve
 ```
 
-### Step 2: Deploy Platform Infrastructure
+### Step 3: Deploy Platform Infrastructure
 
 Deploy the platform infrastructure including Resource Group, Key Vault, Self-Signed Certificate, AKS, ACR, Managed Identity, and Ratify Helm Chart:
 
@@ -58,7 +64,7 @@ terraform init
 terraform apply -auto-approve
 ```
 
-### Step 3: Clean Up Auto-Created Ratify Resources
+### Step 4: Clean Up Auto-Created Ratify Resources
 
 Remove the automatically created Ratify resources in AKS:
 
@@ -71,7 +77,7 @@ kubectl delete Verifier verifier-notation
 kubectl delete Store store-oras
 ```
 
-### Step 4: Deploy Ratify Policies
+### Step 5: Deploy Ratify Policies
 
 Deploy Ratify policies including verifier, store, key management provider, and Azure policies:
 
@@ -81,7 +87,7 @@ terraform init
 terraform apply -auto-approve
 ```
 
-### Step 5: Configure GitHub Secrets
+### Step 6: Configure GitHub Secrets
 
 Set up your Azure credentials as a GitHub secret named `AZURE_CREDENTIALS` in your repository:
 
@@ -94,7 +100,7 @@ Set up your Azure credentials as a GitHub secret named `AZURE_CREDENTIALS` in yo
 }
 ```
 
-### Step 6: Run Build and Deploy GitHub Action
+### Step 7: Run Build and Deploy GitHub Action
 
 Execute the GitHub Action workflow to build, push, and sign the demo images:
 - `demo-signed-image` (signed)
