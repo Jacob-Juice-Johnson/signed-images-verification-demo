@@ -9,41 +9,42 @@ env:
   AKV_NAME: ratifykvdemo009  # Updated to match Terraform Key Vault name
 
 jobs:
-  runs-on: ubuntu-latest
-  strategy:
-    fail-fast: false
-    matrix:
-      image_type:
-        - name: demo-signed-image
-        - name: demo-unsigned-image
-  steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image_type:
+          - name: demo-signed-image
+          - name: demo-unsigned-image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: setup notation
-    uses: notaryproject/notation-action/setup@v1
+      - name: Setup notation
+        uses: notaryproject/notation-action/setup@v1
 
-  - name: setup trustpolicy
-    run: |
-      notation policy add -f ./trustpolicy/trustpolicy.json
-      notation policy list
+      - name: Setup trustpolicy
+        run: |
+          notation policy add -f ./trustpolicy/demo-trustpolicy.json
+          notation policy list
+  
+      - name: Log in to Azure CLI
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
 
-    - name: Log in to Azure CLI
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Get Key ID from Azure Key Vault
+        run: |
+          KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
+          echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
 
-    - name: Log in to Azure Container Registry
-      run: |
-        az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
-
-  - name: Get Key ID from Azure Key Vault
-    run: |
-      KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
-      echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
-
-  - name: Verify image signature
-    uses: notaryproject/notation-action/verify@v1
-    with:
-      image: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
-      key: $KEY_ID
+      - name: Verify image signature
+        uses: notaryproject/notation-action/verify@v1
+        with:
+          image: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
+          key: ${{ env.KEY_ID }}
