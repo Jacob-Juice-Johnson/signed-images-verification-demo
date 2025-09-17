@@ -20,14 +20,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup notation
-        uses: notaryproject/notation-action/setup@v1
-
-      - name: Setup trustpolicy
-        run: |
-          notation policy import ./trustpolicy/demo-trustpolicy.json
-          notation policy show
   
       - name: Log in to Azure CLI
         uses: azure/login@v2
@@ -38,17 +30,32 @@ jobs:
         run: |
           az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
 
-      - name: Download public certificate from Key Vault
-        run: |
-          az keyvault certificate download --name ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --file ./cert.pem
+      - name: Setup notation
+        uses: notaryproject/notation-action/setup@v1
 
-      - name: Add certificate to notation trust store
+      # Get Key ID dynamically from Azure Key Vault
+      - name: Get Key ID from Azure Key Vault
         run: |
-          STORE_TYPE="ca"
-          STORE_NAME="default"
-          notation cert add --type $STORE_TYPE --store $STORE_NAME ./cert.pem
-          notation cert ls
+          KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
+          echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+          echo "Retrieved Key ID: $KEY_ID"
 
-      - name: Verify image signature
+      # Configure notation with the self-signed certificate
+      # Verify the signed Helm chart in ACR
+      - name: Notation Verify Helm Charts
         run: |
-          notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
+          # Download the certificate from Key Vault
+          az keyvault certificate download --vault-name ${{ env.AKV_NAME }} --name ${{ env.CERT_NAME }} --file cert.pem --encoding PEM
+          # Add the certificate to notation trust store using correct format
+          notation cert add --type ca --store ca-certs cert.pem
+          # Verify the certificate was added
+          notation cert list --store ca
+          # Import the trust policy
+          notation policy import ./trustpolicy/demo-trustpolicy.json
+          # Show trust policy
+          notation policy show
+          # Get the digest of the specific image we want to verify
+          CHART_DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name ${{ matrix.image_type.name }} --query "[?tags[0]=='latest'].digest" -o tsv)
+          echo "Chart digest: $CHART_DIGEST"
+          # Verify the image in ACR using digest for security
+          notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:@$CHART_DIGEST
