@@ -1,4 +1,4 @@
-name: Notation Verify Image Signatures
+name: Basic Demo Notation Verify Image Signatures
 
 on:
   workflow_dispatch: # Allow manual triggering
