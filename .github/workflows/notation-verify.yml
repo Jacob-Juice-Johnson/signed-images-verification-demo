@@ -12,7 +12,7 @@ jobs:
   runs-on: ubuntu-latest
   strategy:
     fail-fast: false
-      matrix:
+    matrix:
       image_type:
         - name: demo-signed-image
         - name: demo-unsigned-image
