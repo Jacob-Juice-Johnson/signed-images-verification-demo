@@ -26,8 +26,8 @@ jobs:
 
       - name: Setup trustpolicy
         run: |
-          notation policy add -f ./trustpolicy/demo-trustpolicy.json
-          notation policy list
+          notation policy import ./trustpolicy/demo-trustpolicy.json
+          notation policy show
   
       - name: Log in to Azure CLI
         uses: azure/login@v2
