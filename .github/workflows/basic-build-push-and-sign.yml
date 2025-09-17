@@ -46,10 +46,6 @@ jobs:
           ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:${{ github.sha }}
           ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
 
-    - name: Retrieve digest
-      run: |
-        echo "target_artifact_reference=${{ env.REGISTRY }}/${{ matrix.image_type.name }}@${{ steps.push.outputs.digest }}" >> "$GITHUB_ENV"
-
     # Install Notation CLI with the default version "1.1.0"
     - name: setup notation
       if: matrix.image_type.sign
@@ -72,7 +68,7 @@ jobs:
         plugin_url: https://github.com/Azure/notation-azure-kv/releases/download/v1.0.1/notation-azure-kv_1.0.1_linux_amd64.tar.gz
         plugin_checksum: f8a75d9234db90069d9eb5660e5374820edf36d710bd063f4ef81e7063d3810b
         key_id: ${{ env.KEY_ID }}
-        target_artifact_reference: ${{ env.target_artifact_reference }}
+        target_artifact_reference: latest
         signature_format: cose
         plugin_config: |-
           self_signed=true

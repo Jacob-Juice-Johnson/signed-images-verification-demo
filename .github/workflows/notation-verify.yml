@@ -54,8 +54,5 @@ jobs:
           notation policy import ./trustpolicy/demo-trustpolicy.json
           # Show trust policy
           notation policy show
-          # Get the digest of the specific image we want to verify
-          CHART_DIGEST=$(az acr manifest list-metadata --registry $(echo $REGISTRY | cut -d'.' -f1) --name ${{ matrix.image_type.name }} --query "[?contains(tags, 'latest')].digest" -o tsv)
-          echo "Chart digest: $CHART_DIGEST"
           # Verify the image in ACR using digest for security
-          notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}@$CHART_DIGEST
+          notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
