@@ -1,4 +1,4 @@
-name: Build, Push, Sign, Deploy Complex Demo (Helm/Docker)
+name: Notation Verify Image Signatures
 
 on:
   workflow_dispatch: # Allow manual triggering
