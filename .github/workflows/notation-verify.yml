@@ -50,6 +50,5 @@ jobs:
           notation cert ls
 
       - name: Verify image signature
-        uses: notaryproject/notation-action/verify@v1
-        with:
-          target_artifact_reference: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
+        runs: |
+          notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
