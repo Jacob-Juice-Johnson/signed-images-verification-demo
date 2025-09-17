@@ -1,4 +1,4 @@
-name: Build, Push, Sign and Deploy Basic Demo (Docker)
+name: Basic Demo Build, Push, Sign and Deploy (Docker)
 
 on:
   workflow_dispatch: # Allow manual triggering

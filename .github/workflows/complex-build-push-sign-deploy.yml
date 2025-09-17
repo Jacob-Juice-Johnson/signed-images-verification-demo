@@ -1,4 +1,4 @@
-name: Build, Push, Sign, Deploy Complex Demo (Helm/Docker)
+name: Complex Demo Build, Push, Sign, Deploy (Helm/Docker)
 
 on:
   workflow_dispatch: # Allow manual triggering

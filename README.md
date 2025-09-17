@@ -115,7 +115,10 @@ Execute the GitHub Action workflow to build, push, and sign the demo images: (Fo
    kubectl get constraintTemplate ratifyverification
    ```
 
-2. **Test signed and unsigned image deployment**:
+2. **Verify Image is signed**:
+   Run the notation-verify.yml workflow in GitHub Actions to verify the image signature:
+
+3. **Test signed and unsigned image deployment**:
    ```bash
    # Login to ACR
    sudo az acr login --name {acr-name}

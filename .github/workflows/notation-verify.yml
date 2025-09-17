@@ -1,0 +1,38 @@
+name: Build, Push, Sign, Deploy Complex Demo (Helm/Docker)
+
+on:
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  REGISTRY: ratifyacrdemo009.azurecr.io  # Updated to match Terraform ACR name
+  CERT_NAME: ratify  # Updated to match Terraform certificate name
+  AKV_NAME: ratifykvdemo009  # Updated to match Terraform Key Vault name
+
+jobs:
+    runs-on: ubuntu-latest
+    strategy:
+        fail-fast: false
+        matrix:
+        image_type:
+            - name: demo-signed-image
+            - name: demo-unsigned-image
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    # Install notation
+    - name: setup notation
+      uses: notaryproject/notation-action/setup@v1
+    # Install trustpolicy with noation from ./trustpolicy/trustpolicy.json
+    - name: setup trustpolicy
+      run: |
+        notation policy add -f ./trustpolicy/trustpolicy.json
+        notation policy list
+    # Get Key ID dynamically from Azure Key Vault
+    - name: Get Key ID from Azure Key Vault
+        run: |
+            KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
+            echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+    # Verify the image signature
+    - name: Verify image signature
+      run: |
+        notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest --key $KEY_ID
