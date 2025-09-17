@@ -38,13 +38,18 @@ jobs:
         run: |
           az acr login --name $(echo $REGISTRY | cut -d'.' -f1)
 
-      - name: Get Key ID from Azure Key Vault
+      - name: Download public certificate from Key Vault
         run: |
-          KEY_ID=$(az keyvault certificate show -n ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --query 'kid' -o tsv)
-          echo "KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+          az keyvault certificate download --name ${{ env.CERT_NAME }} --vault-name ${{ env.AKV_NAME }} --file ./cert.pem
+
+      - name: Add certificate to notation trust store
+        run: |
+          STORE_TYPE="ca-certs"
+          STORE_NAME="default"
+          notation cert add --type $STORE_TYPE --store $STORE_NAME ./cert.pem
+          notation cert ls
 
       - name: Verify image signature
         uses: notaryproject/notation-action/verify@v1
         with:
-          image: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
-          key: ${{ env.KEY_ID }}
+          target_artifact_reference: ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
