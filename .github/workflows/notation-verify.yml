@@ -50,5 +50,5 @@ jobs:
           notation cert ls
 
       - name: Verify image signature
-        runs: |
+        run: |
           notation verify ${{ env.REGISTRY }}/${{ matrix.image_type.name }}:latest
