@@ -1,3 +1,13 @@
+resource "kubernetes_manifest" "demo_namespace" {
+  manifest = {
+    apiVersion = "v1"
+    kind       = "Namespace"
+    metadata = {
+      name = "demo"
+    }
+  }
+}
+
 resource "kubernetes_manifest" "ratify_store_oras" {
   manifest = {
     apiVersion = "config.ratify.deislabs.io/v1beta1"

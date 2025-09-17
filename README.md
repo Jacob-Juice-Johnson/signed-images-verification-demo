@@ -102,7 +102,7 @@ Set up your Azure credentials as a GitHub secret named `AZURE_CREDENTIALS` in yo
 
 ### Step 7: Run Build and Deploy GitHub Action
 
-Execute the GitHub Action workflow to build, push, and sign the demo images:
+Execute the GitHub Action workflow to build, push, and sign the demo images: (For basic image deploymen test demo)
 - `demo-signed-image` (signed)
 - `demo-unsigned-image` (unsigned)
 

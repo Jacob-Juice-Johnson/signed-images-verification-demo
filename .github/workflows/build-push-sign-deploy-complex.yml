@@ -1,4 +1,4 @@
-name: Build, Push, and Sign Artifacts for Demo (Docker/Helm)
+name: Build, Push, Sign, Deploy Complex Demo (Helm/Docker)
 
 on:
   workflow_dispatch: # Allow manual triggering
@@ -298,7 +298,7 @@ jobs:
       run: |
         az aks get-credentials --resource-group ratifyrgdemo009 --name ratifyaksdemo009
 
-    - name: Deploy application with Helm
+    - name: Deploy application ${{ matrix.app_type.name }} with Helm
       run: |
         helm upgrade --install ${{ matrix.app_type.name }} oci://${{ env.REGISTRY }}/helm/${{ matrix.app_type.helm_chart }}/demo-app \
           --version 1.0.0 \
