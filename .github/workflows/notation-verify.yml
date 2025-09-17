@@ -44,7 +44,7 @@ jobs:
 
       - name: Add certificate to notation trust store
         run: |
-          STORE_TYPE="ca-certs"
+          STORE_TYPE="ca"
           STORE_NAME="default"
           notation cert add --type $STORE_TYPE --store $STORE_NAME ./cert.pem
           notation cert ls
