@@ -1,0 +1,15 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: KeyManagementProvider
+metadata:
+  name: keymanagementprovider-akv
+  labels:
+    ratify-demo: keymanagementprovider-akv
+spec:
+  type: azurekeyvault
+  parameters:
+    vaultURI: "https://${key_vault_name}.vault.azure.net/"
+    certificates:
+      - name: "${certificate_name}"
+        version: "${certificate_version}"
+    tenantID: "${tenant_id}"
+    clientID: "${client_id}"

@@ -19,13 +19,13 @@ This demo consists of two main components: the build and push workflow, and the 
 
 The signing architecture is responsible for building, pushing, and signing container images to Azure Container Registry. The architecture looks like this:
 
-![Signing Architecture Diagram](docs/signing-architecture.svg)
+![Signing Architecture Diagram](./signing-architecture.svg)
 
 ### Deployment Verification Architecture
 
 The deployment verification architecture is responsible for verifying that images being deployed to an AKS cluster are signed. The architecture looks like this:
 
-![Deployment Verification Architecture Diagram](docs/verification-architecture.svg)
+![Deployment Verification Architecture Diagram](./verification-architecture.svg)
 
 ## Prerequisites
 
