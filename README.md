@@ -82,6 +82,8 @@ kubectl delete Store store-oras
 Deploy Ratify policies including verifier, store, key management provider, and Azure policies:
 
 ```bash
+# Before deployinng azure policy add-on you need to enable this feature in azure
+az feature register -n AKS-AzurePolicyExternalData --namespace Microsoft.ContainerService
 cd infra/ratify
 terraform init
 terraform apply -auto-approve

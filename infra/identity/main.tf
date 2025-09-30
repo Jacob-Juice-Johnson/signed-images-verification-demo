@@ -11,7 +11,7 @@ resource "azuread_service_principal" "github_actions" {
 resource "azuread_service_principal_password" "github_actions" {
   service_principal_id = azuread_service_principal.github_actions.id
   display_name         = "GitHub Actions Password"
-  end_date            = timeadd(timestamp(), "2h")  # Expires in 2 hours
+  end_date            = timeadd(timestamp(), "12h")  # Expires in 12 hours
 }
 
 # Least privilege role assignments for the service principal
